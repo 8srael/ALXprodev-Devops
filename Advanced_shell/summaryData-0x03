@@ -25,6 +25,9 @@ for file in "$json_dir"/*.json; do
     height=$(jq -r '.height' "$file") # Height in decimeters
     weight=$(jq -r '.weight' "$file") # Weight in hectograms
 
+    # Capitalize the first letter of the name using sed
+    name=$(echo "$name" | sed -E 's/(^.)/\U\1/')
+
     # Convert height and weight to meters and kilograms
     formatted_height=$(awk "BEGIN {printf \"%.1f\", $height / 10}")
     formatted_weight=$(awk "BEGIN {printf \"%.1f\", $weight / 10}")
