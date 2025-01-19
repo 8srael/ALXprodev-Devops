@@ -1,27 +1,27 @@
 #!/bin/bash
 
 # Define variables
-JSON_FILE="data.json"
+json_file="data.json"
 
 # Ensure the JSON file exists
-if [ ! -f "$JSON_FILE" ]; then
-    echo "Error: JSON file '$JSON_FILE' not found!"
+if [ ! -f "$json_file" ]; then
+    echo "Error: JSON file '$json_file' not found!"
     exit 1
 fi
 
 # Extract data using jq
-NAME=$(jq -r '.name' "$JSON_FILE")
-HEIGHT=$(jq -r '.height' "$JSON_FILE")
-WEIGHT=$(jq -r '.weight' "$JSON_FILE")
-TYPE=$(jq -r '.types[0].type.name' "$JSON_FILE")
+name=$(jq -r '.name' "$json_file")
+height=$(jq -r '.height' "$json_file")
+weight=$(jq -r '.weight' "$json_file")
+type=$(jq -r '.types[0].type.name' "$json_file")
 
 # Convert height and weight to appropriate units
 # Height is stored in decimeters; convert to meters
-HEIGHT_METERS=$(awk "BEGIN {printf \"%.1f\", $HEIGHT / 10}")
+formatted_height=$(awk "BEGIN {printf \"%.1f\", $height / 10}")
 
 # Weight is stored in hectograms; convert to kilograms
-WEIGHT_KG=$(awk "BEGIN {printf \"%.1f\", $WEIGHT / 10}")
+formatted_weight=$(awk "BEGIN {printf \"%.1f\", $weight / 10}")
 
 # Format and print the output using sed (for minor formatting if needed)
-OUTPUT="$NAME is of type $TYPE, weighs ${WEIGHT_KG}kg, and is ${HEIGHT_METERS}m tall."
-echo "$OUTPUT" | sed 's/^\(.*\)$/\1/'
+output="$name is of type $type, weighs ${formatted_weight}kg, and is ${formatted_height}m tall."
+echo "$output" | sed 's/^\(.*\)$/\1/'
