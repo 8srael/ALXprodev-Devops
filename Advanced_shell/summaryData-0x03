@@ -5,7 +5,7 @@ json_dir="./pokemon_data"  # Directory containing all JSON files
 output_csv="pokemon_summary.csv"
 
 # Check if the directory exists
-if [ ! -d "$JSON_DIR" ]; then
+if [ ! -d "$json_dir" ]; then
     echo "Error: Directory '$json_dir' not found!"
     exit 1
 fi
@@ -19,7 +19,7 @@ total_weight=0
 count=0
 
 # Process each JSON file in the directory
-for file in "$JSON_DIR"/*.json; do
+for file in "$json_dir"/*.json; do
     # Extract name, height, and weight using jq
     name=$(jq -r '.name' "$file")
     height=$(jq -r '.height' "$file") # Height in decimeters
