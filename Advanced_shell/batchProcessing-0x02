@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Define the list of Pokémon
-pokemon_list=["bulbasaur", "ivysaur", "venusaur", "charmander", "charmeleon"]
+pokemon_list=["Bulbasaur" "Ivysaur" "Venusaur" "Charmander" "Charmeleon"]
+
 # Define the output directory
 output_dir="./pokemon_data"
 
@@ -11,29 +12,59 @@ api_url="https://pokeapi.co/api/v2/pokemon"
 # Create the output directory if it doesn't exist
 mkdir -p "$output_dir"
 
+# Log file for errors
+error_log="pokemon_errors.log"
+
+# Function to fetch data with retry logic
+fetch_data() {
+    local pokemon=$1
+    local formatted_name=$(echo "$pokemon" | tr '[:upper:]' '[:lower:]')
+    local output_file="$output_dir/${formatted_name}.json"
+    local attempt=1
+    local max_retries=3
+    local delay=5  # Delay in seconds before retrying
+
+    while [ $attempt -le $max_retries ]; do
+        echo "Attempting to fetch data for $pokemon (Attempt $attempt)..."
+
+        # Make the API request and save the response to a file
+        response=$(curl -s -w "%{http_code}" -o "$output_file" "$api_url/$formatted_name")
+
+        # Check if the request was successful (HTTP 200)
+        if [ "$response" -eq 200 ]; then
+            echo "Data for $pokemon saved to $output_file"
+            return 0  # Success, exit the function
+        else
+            echo "Failed to fetch data for $pokemon (HTTP status: $response)"
+            # Log the error with details
+            echo "$(date): $pokemon - HTTP $response" >> "$error_log"
+        fi
+
+        # If the request failed, retry after a delay
+        if [ $attempt -lt $max_retries ]; then
+            echo "Retrying in $delay seconds..."
+            sleep $delay
+        fi
+
+        attempt=$((attempt + 1))
+    done
+
+    # After retries, if still unsuccessful, log the error and move to the next Pokémon
+    echo "$(date): $pokemon - Failed after $max_retries attempts" >> "$error_log"
+    return 1  # Failure, exit the function
+}
+
 # Loop through each Pokémon in the list
 for pokemon in "${pokemon_list[@]}"; do
-    # Format Pokémon name to lowercase (API requires lowercase names)
-    formatted_name=$(echo "$pokemon" | tr '[:upper:]' '[:lower:]')
+    fetch_data "$pokemon"  # Attempt to fetch data
 
-    # Define the output file name
-    output_file="$output_dir/${formatted_name}.json"
-
-    # Make the API request and save the response to a file
-    echo "Fetching data for $pokemon..."
-    response=$(curl -s -w "%{http_code}" -o "$output_file" "$api_url/$formatted_name")
-
-    # Check if the response was successful (HTTP 200)
-    if [ "$response" -eq 200 ]; then
-        echo "Data for $pokemon saved to $output_file"
-    else
-        echo "Failed to fetch data for $pokemon (HTTP status: $response)"
-        # Remove the incomplete JSON file
-        rm -f "$output_file"
+    # Check if the request was successful
+    if [ $? -ne 0 ]; then
+        echo "Skipping $pokemon due to repeated failures."
     fi
 
-    # Add a delay between requests to prevent rate-limiting (2 seconds)
+    # Add a delay between requests to avoid hitting rate limits
     sleep 2
 done
 
-echo "Data retrieval complete. All files are stored in the '$output_dir' directory."
+echo "Data retrieval complete. Check '$error_log' for any errors."
